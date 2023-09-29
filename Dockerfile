@@ -1,11 +1,6 @@
 # Use the specified Rust version
 FROM rust:1.70
 
-# Set up environment variables for pip to prevent read-only filesystem issues
-ENV TMPDIR=/tmp
-ENV PIP_NO_CACHE_DIR=off
-ENV PIP_CACHE_DIR=/tmp/pip-cache
-
 # Copy the Cargo.toml file
 COPY Cargo.toml /rust-jupyter/
 
@@ -17,10 +12,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     rm -rf /var/lib/apt/lists/* # Clean up to reduce image size
 
 # Install Python packages
-RUN rm -rf /tmp/* && pip3 install --no-cache-dir jupyter jupyterlab torch
+RUN rm -rf /tmp/* && pip3 install --no-cache-dir jupyter jupyterlab
 
-# Test if PyTorch is installed correctly
-RUN python3 -c "import torch; print(torch.__version__)"
 
 # Add clippy for linting
 RUN rustup component add clippy
@@ -30,8 +23,8 @@ WORKDIR /rust-jupyter
 
 # Create a dummy Rust project to check if everything is in order
 RUN mkdir src && \
-    echo "fn main() {}" > src/main.rs && \
-    LIBTORCH_USE_PYTORCH=1 cargo build --release
+    echo "fn main() {}" > src/main.rs
+    
 
 # Run clippy with pedantic lints
 RUN cargo clippy --release -- -D warnings -W clippy::pedantic
